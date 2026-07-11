@@ -26,10 +26,12 @@ except requests.exceptions.RequestException as err:
 soup = BeautifulSoup(html_content, "html.parser")
 
 # Table titles
+
 span_list_temp = soup.find_all('span', class_="rozklad-title")
 span_list = [span.get_text() for span in span_list_temp]
 
 # Parsing table header row
+
 table_list = soup.find_all('table')
 
 # table_0 = soup.find('table').prettify()
@@ -40,6 +42,7 @@ table_hour_list_th_temp2 = [table_hour.get_text() for table_hour in table_hour_l
 table_hour_list_th = [table_hour.replace("\t", "").replace("\r", "").replace("\n", "") for table_hour in table_hour_list_th_temp2]
 
 # Up to this point we have one list with all the headers, now i'm going to split this list into smaller sections, seperate for each table
+
 table_hour_list_container = []
 table_hour_list = []
 godz_counter = 0
@@ -62,14 +65,13 @@ table_minute_list_td = [table_minute_one_hour_list.replace("\t", "").replace("\r
 
 # print(table_minute_list_td)
 
-# Remove leading and trailing whitespaces
-table_minute_list_td = [table_minute_one_hour_list.strip() for table_minute_one_hour_list in table_minute_list_td]
-# Remove empty list elements
-table_minute_list_td = [table_minute_one_hour_list for table_minute_one_hour_list in table_minute_list_td if table_minute_one_hour_list.strip()]
+# Removing leading and trailing whitespaces
 
+table_minute_list_td = [table_minute_one_hour_list.strip() for table_minute_one_hour_list in table_minute_list_td]
 # print(table_minute_list_td)
 
 # Dividing list elements into proper minute marks (ex. "003259" -> "00", "32", "59")
+
 table_minute_list_td_clean = []
 table_minute_list_one_schedule_td_clean = []
 table_minute_list_one_hour_td_clean = []
@@ -84,15 +86,24 @@ for table_minute_one_hour_list in table_minute_list_td:
         table_minute_list_one_schedule_td_clean.append(table_minute_list_one_hour_td_clean)
         table_minute_list_one_hour_td_clean = []
     else:
-        min_counter += 1
-        if min_counter >= 2:
-            table_minute_list_td_clean.append(table_minute_list_one_schedule_td_clean)
-            table_minute_list_one_schedule_td_clean = []
+        if table_minute_one_hour_list:
+            min_counter += 1
+            if min_counter >= 2:
+                table_minute_list_td_clean.append(table_minute_list_one_schedule_td_clean)
+                table_minute_list_one_schedule_td_clean = []
+        else:
+            table_minute_list_one_hour_td_clean.append(table_minute_one_hour_list)
+            table_minute_list_one_schedule_td_clean.append(table_minute_list_one_hour_td_clean)
+            table_minute_list_one_hour_td_clean = []
 
 table_minute_list_td_clean.append(table_minute_list_one_schedule_td_clean)
 table_minute_list_one_schedule_td_clean = []
 
-# Making dictionaries with hours as keys and list of minutes as values (ex. '4': ['00', '32', '59'])
+# print(table_hour_list_container[0])
+# print("\n")
+# print(table_minute_list_td_clean[0])
+
+# Making dictionaries with hours as keys and list of minutes as values (ex. '5': ['00', '32', '59'])
 
 table_dict = []
 table_dict_container = []
@@ -100,12 +111,22 @@ for i in range(len(table_hour_list_container)):
     table_dict = dict(zip(table_hour_list_container[i], table_minute_list_td_clean[i]))
     table_dict_container.append(table_dict)
 
+# print(table_dict_container[0])
+
+# Adding Nan's to hours that don't have any departures
+
+for table_dict in table_dict_container:
+    for key, elem in table_dict.items():
+        if len(elem) == 1 and '' in elem:
+            table_dict[key] = [float('nan')]
+
+
 # Adding Nan's so that I can make a proper df, beacuse all lists must be of the same length
 
 for table_dict in table_dict_container:
     m = len(max(table_dict.values(), key=len))
     for elem in table_dict.values():
-        if len(elem) < m:
+        while len(elem) < m:
             elem.append(float("nan"))
 
 # print(table_dict_container)
@@ -117,9 +138,6 @@ for table_dict in table_dict_container:
 df_list = []
 for i in range(len(table_hour_list_container)):
     df_list.append(pd.DataFrame(table_dict_container[i]))
-    # print(f"DATAFRAME {i}:")
-    # print(df_list[i])
-    # print("\n")
 
 # Shortening the number of columns (ex. if hour 10, 11, 12 have the same departure minutes we can combine them into one column 10-12)
 
@@ -156,5 +174,3 @@ for i in range(len(table_hour_list_container)):
     print(f"DATAFRAME {i}:")
     print(df_list[i])
     print("\n")
-
-# VS Code commit test
