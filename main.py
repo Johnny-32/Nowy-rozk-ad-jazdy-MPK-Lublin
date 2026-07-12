@@ -2,7 +2,7 @@ import pandas as pd
 import requests
 from bs4 import BeautifulSoup
 
-url = "https://mpk.lublin.pl/?przy=2122&lin=039"
+url = "https://mpk.lublin.pl/?przy=1022&lin=032"
 
 headers = {
     "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
@@ -170,7 +170,53 @@ for idx in range(len(df_list)):
 
     df_list[idx] = pd.DataFrame(new_df_data)
 
+# Printing dataframes to the console
+
 for i in range(len(table_hour_list_container)):
     print(f"DATAFRAME {i}:")
-    print(df_list[i])
+    with pd.option_context('display.max_columns', None):
+        print(df_list[i])
     print("\n")
+
+# Calculating approximate frequencies
+# The algorithm will work by:
+# 1. Reading values of two columns at a time and then calculating the frequency by subtracting each minute with the next 
+# and adding 60 to the result if it's a non-positive number, so the algorithm works with subtracting minutes that are associated with diffrent hours
+# ex. 1.1  6   mod 60 (59 - 29) = 30
+#         29
+#         59
+# 
+# ex. 1.2  5   6   27 - 29 = -2 (beacuse it's a non-positive number we add 60 the the result) -2 + 60 = 58
+#         29  27
+# 
+# 2. To have a x minute frequency label the line needs to have departures every x +- y minutes,
+# where x is the frequency and y is the tolerance for said frequency (there will be a data structure storing this data)
+# for ex. if a line has a 24 minute fruquency label it needs to have departures every 23-25 minutes if tolerance is 1 minute
+# 
+# 3. The values will be calculated by reading values from two columns,
+#    if frequencies couldnt be made with operations made in 2. searching for frequency will be divided into two seperate column (frequency for each hour)
+# 
+# 
+# 4. If a frequency can't be made operation in 3. the frequencies will be divided into smaller chunks (for ex. 2 results of subtraction)
+#    a frequency with higher tolerance will be attempted to be made (for example with +1 toleration),
+#    the first result of a subtraction will be a refference point for other res. of subtr. 
+# 
+# 
+# The labels will be put into two main categories:
+# 1. The labels will be most often a number that is obtained by dividing 60 by the number of the departures (ex. 60 min. / 2 dep. = 30 min. frequency)
+#    So these labels will be 15, 20, 30, 60, less often than 1 hour, [...] 2 hours, [...] 3 hours
+# 
+# 2. The labels can also have a number that is obtained by dividing 120 60 by the number of the departures (ex. 120 min. / 3 dep. = 40 min. frequency)
+#    So these labels will be 24, 40 minutes
+# 
+# 
+# Example 1. (Made in July 2026 - Holiday timetable)
+# Line: 32
+# Direction: Daszyńskiego
+# Bus stop: Plac Litewskiego 02 (Index - 1022)
+# 
+# 5   6    7    8   9   10  11   12  13   14  15   16   17   18   19   20  \
+# 0   05  07   26   15  02   14  02   14  02   14  02   17   04   05   03   03   
+# 1   37  34   51   38  26   38  26   38  26   38  29   41   35   33   33   36   
+# 2  NaN  59  NaN  NaN  50  NaN  50  NaN  50  NaN  53  NaN  NaN  NaN  NaN  NaN
+
