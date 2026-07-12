@@ -133,11 +133,12 @@ for table_dict in table_dict_container:
 
 # print(table_dict_container[0])
 
-# Creating df's with header row
+# Creating df's with header row and deleting indexes
 
 df_list = []
 for i in range(len(table_hour_list_container)):
     df_list.append(pd.DataFrame(table_dict_container[i]))
+    df_list[i].index = [''] * len(df_list[i])
 
 # Shortening the number of columns (ex. if hour 10, 11, 12 have the same departure minutes we can combine them into one column 10-12)
 
@@ -181,7 +182,8 @@ for i in range(len(table_hour_list_container)):
 # Calculating approximate frequencies
 # The algorithm will work by:
 # 1. Reading values of two columns at a time and then calculating the frequency by subtracting each minute with the next 
-# and adding 60 to the result if it's a non-positive number, so the algorithm works with subtracting minutes that are associated with diffrent hours
+# and adding 60 to the result if it's a non-positive number, so the algorithm works with subtracting minutes that are associated with diffrent hours,
+# results will be stored in a dictionary with key that indicates hours that the minutes were subtracted (ex. 5:09 and 5:39 -> 5: '30') (ex. 5:39 and 6:09 -> 5-6: '30')
 # ex. 1.1  6   mod 60 (59 - 29) = 30
 #         29
 #         59
@@ -210,13 +212,25 @@ for i in range(len(table_hour_list_container)):
 #    So these labels will be 24, 40 minutes
 # 
 # 
-# Example 1. (Made in July 2026 - Holiday timetable)
+# Example 1. (Made in July 2026 - Holiday timetable) ------------------------------------------------------------------------------------------------
 # Line: 32
 # Direction: Daszyńskiego
 # Bus stop: Plac Litewskiego 02 (Index - 1022)
+# Timetable:
 # 
-# 5   6    7    8   9   10  11   12  13   14  15   16   17   18   19   20  \
-# 0   05  07   26   15  02   14  02   14  02   14  02   17   04   05   03   03   
-# 1   37  34   51   38  26   38  26   38  26   38  29   41   35   33   33   36   
-# 2  NaN  59  NaN  NaN  50  NaN  50  NaN  50  NaN  53  NaN  NaN  NaN  NaN  NaN
-
+#     5   6    7    8   9   10  11   12  13   14  15   16   17   18   19   20   21   22   23 
+#    05  07   26   15  02   14  02   14  02   14  02   17   04   05   03   03   06   06   05
+#    37  34   51   38  26   38  26   38  26   38  29   41   35   33   33   36   36   36  NaN
+#   NaN  59  NaN  NaN  50  NaN  50  NaN  50  NaN  53  NaN  NaN  NaN  NaN  NaN  NaN  NaN  NaN
+# 
+# In this example we will be sticking to hours 5-9
+# 1. Calculating results of subtraction
+# 37 - 05 = 32
+# 07 - 37 = -30 + 60 = 30
+# 34 - 07 = 27
+# 59 - 34 = 25
+# 26 - 59 = -33 + 60 = 27
+# 51 - 26 = 25
+# 15 - 51 = -36 + 60 = 24
+# 38 - 15 = 23
+# Resulting dictionary is: ...
