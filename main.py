@@ -215,6 +215,13 @@ for i in range(len(table_hour_list_container)):
 # 7. At the end we can plot the data into something like this: first departure - frequency - breakpoint - frequency - breakpoint - ... - frequency - last departure
 # 
 # 
+# Data structures used for storing this data:
+# diffs -> dictionary that will store differences time between departures (ex. one elem -> '5:37-5:05': 32)
+# group_container -> list that will contain groups
+# group_container[i] -> list that will contained diffs that are grouped (so like in example it will be group 1. ...)
+# breakpoint_list -> list that will contain breakpoints
+# 
+# 
 # The labels will be put into two main categories:
 # 1. The labels will be most often a number that is obtained by dividing 60 by the number of the departures (ex. 60 min. / 2 dep. = 30 min. frequency)
 #    So these labels will be 15, 20, 30, 60, less often than 1 hour, [...] 2 hours, [...] 3 hours
