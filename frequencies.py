@@ -15,7 +15,7 @@
 #    for ex. if a line has a 24 minute fruquency label it needs to have departures every 22-26 minutes, if tolerance is 2 minutes,
 #    as a base a tolerance of 2 minutes will be used,
 #    frequency for a period of time must be one of the predefined frequencies:
-#    (15, 20, 24, 30, 40, 60, >60)
+#    (15, 20, 24, 30, 40, 45, 60, >60)
 #    ??? Maybe if a frequency for a period of time sways to far from a predefined frequency it will be put into something like this:
 #    if a calculated frequency is 35 minutes with big fluctuations, maybe it can be put into 30-40 frequency
 #    
@@ -41,12 +41,6 @@
 # breakpoint_list -> list that will contain breakpoints
 # 
 # 
-# The labels will be put into two main categories:
-# 1. The labels will be most often a number that is obtained by dividing 60 by the number of the departures (ex. 60 min. / 2 dep. = 30 min. frequency)
-#    So these labels will be 15, 20, 30, 60, less often than 1 hour, [...] 2 hours, [...] 3 hours
-# 
-# 2. The labels can also have a number that is obtained by dividing 120 60 by the number of the departures (ex. 120 min. / 3 dep. = 40 min. frequency)
-#    So these labels will be 24, 40 minutes
 # 
 # 
 # Example 1. (Made in July 2026 - Holiday timetable) ------------------------------------------------------------------------------------------------
@@ -110,6 +104,7 @@
 # ??? Maybe add calculating frequencies by getting the timetable from the first stop of a route, beacuse the departures there are more consistent
 
 import timetable
+from math import isnan
 
 # for i in range(len(timetable.table_hour_list_container)):
 #     print(timetable.df_list[i])
@@ -117,43 +112,64 @@ import timetable
 
 minute_list_container = []
 difference_list_container = []
+difference_list_container = []
+tolerance = 2
+predefined_frequency_list = [15, 20, 24, 30, 40, 45, 60]
 
 for idx in range(len(timetable.df_list)):
     current_df = timetable.df_list[idx]
     # print(current_df)
-    cols = list(current_df.columns)
-    # print(cols)
-    column_counter = 0
+
+    # Filling a list with minute values
 
     minute_list = []
-    difference_list = []
-
 
     for key, value in current_df.items():
         for minute in value:
-            minute_list.append((key, minute))
+            if not (isnan(float(minute))):
+                minute_list.append((key, minute))
     minute_list_container.append(minute_list)
 
-    current_minute_list = minute_list_container[idx]
+    # Filling a list with differences in tuples (hour:minute-hour:minute) in minutes between departures
 
+    current_minute_list = minute_list_container[idx]
+    difference_list = []
     for idx_m in range(len(current_minute_list) - 1):
         current_hour, current_minute = current_minute_list[idx_m]
         next_hour, next_minute = current_minute_list[idx_m + 1]
-        difference = next_minute - current_minute
-        if difference <= 0 and : # What if the departures are 12:30 and 13:45
+        difference_value = 60 * (int(next_hour) - int(current_hour)) + (int(next_minute) - int(current_minute))
+        difference_key = f"{current_hour}:{current_minute}-{next_hour}:{next_minute}"
+        difference_list.append((difference_key, difference_value))
+    difference_list_container.append(difference_list)
 
+    group_list_list_container = []
+    group_list_list = []
+    group_list = []
 
-    # while column_counter < len(cols):
-        # minute_in_a_column = 0
-        # while minute_in_a_column < len(cols[column_counter]) - 1:
-            # print(cols[minute_in_a_column])
-            # difference_between_two_minutes = int(cols[minute_in_a_column + 1]) - int(cols[minute_in_a_column])
-            # print(difference_between_two_minutes)
-            # difference = current_df[difference_between_two_minutes]
-            # difference_list.append(difference)
-            # minute_in_a_column += 1
-        # column_counter += 1
+    current_difference_list = difference_list_container[idx]
+    for idx_d in range(len(current_difference_list)):
+        current_two_timestamps, current_difference = current_difference_list[idx_d]
+        two_timestamp_list = current_two_timestamps.split("-")
+        first_timestamp = two_timestamp_list[0]
+        next_timestamp = two_timestamp_list[1]
 
-
-    # print(difference_list)
-    # print("/n")        
+        # Problematyczny przypadek że grupy będą 15, 20, 15
+        # Najlepiej bedzie to zrobic tak ze najpierw wszystkie roznice powrzucam do list z predefiniowanymi czestotliwosciami
+        # Pozniej rozdzielę gdy next_timestamp w liscie bedzie sie rozil od first_timestamp w kolejnym elemencie listy
+        # Wtedy w tym miejscu podzielę te listę na dwie listy
+        # Ale jak będą bardziej skomplikowane przypadki to skad bedzie wiadomo na jakie miejsce dać nowo stworzoną listę
+        # W takim razie należy poszukać innego sposobu
+        # 
+        # Trzeba użyć zmiennej next_group_switcher
+        # Jakoś to trzeba zrobić że gdy zmienia się group_frequency to wtedy do kolejnej listy appendujemy
+        # Może group frequency zrobić jako krotkę, która będzie trzymała poprzedni group_frequency i aktualny jakby
+        
+        not_matched_list = []
+        next_group_switcher = False
+        group_frequency_list = 0
+        for predefined_frequency in predefined_frequency_list:
+            if abs(current_difference - predefined_frequency) <= tolerance:
+                group_frequency = predefined_frequency
+                group_list.append(current_difference_list[idx_d])
+            else:
+                not_matched_list.append(current_difference_list[idx_d])
