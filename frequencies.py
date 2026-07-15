@@ -113,6 +113,7 @@ from math import isnan
 minute_list_container = []
 difference_list_container = []
 difference_list_container = []
+group_list_for_a_timetable_period_container = []
 tolerance = 2
 predefined_frequency_list = [15, 20, 24, 30, 40, 45, 60]
 
@@ -146,7 +147,6 @@ for idx in range(len(timetable.df_list)):
     current_difference_list = difference_list_container[idx]
     group_list = []
     group_list_for_a_timetable_period = []
-    group_list_for_a_timetable_period_container = []
     not_matched_list = []
     group_frequency_list = []
     group_frequency_tuple = (0, 0)
@@ -167,15 +167,9 @@ for idx in range(len(timetable.df_list)):
         # Ale jak będą bardziej skomplikowane przypadki to skad bedzie wiadomo na jakie miejsce dać nowo stworzoną listę
         # W takim razie należy poszukać innego sposobu
         # 
-        # Trzeba użyć zmiennej next_group_switcher
-        # Jakoś to trzeba zrobić że gdy zmienia się group_frequency to wtedy do kolejnej listy appendujemy
-        # Może group frequency zrobić jako krotkę, która będzie trzymała poprzedni group_frequency i aktualny jakby
-        # 
-        # Struktury danych ktorych potrzebuję to
-        # group_list -> jedna grupa różnic (np różnice z 24 czestotliwoscia) -> do group_list najlepiej przydałby się dostęp po indeksie
-        # group_list_for_each_timetable_period -> będzie miała kilka elementów (np. 3) i elementy to będą group_list
-        # group_list_for_each_timetable_container -> będzie miał tyle elementów ile jest timetable period (zazwyczaj 3)
-        
+        # Pierwsza grupa jest poprawna, ale kolejne są złe, 27 poprawnie nie jest przydzielane, ale później tworzy się za dużo grup 24
+        # Też gdzieś źle appenduję - GŁÓWNY BŁĄD
+        # Obsłużyć przypadek kiedy minuta nie jest przypisana do żadnej z grup i to nie updatuje tupla
         
         for predefined_frequency in predefined_frequency_list:
             if abs(current_difference - predefined_frequency) <= tolerance:
@@ -186,12 +180,13 @@ for idx in range(len(timetable.df_list)):
                     second_elem_of_a_tuple = predefined_frequency
                 if first_elem_of_a_tuple != second_elem_of_a_tuple:
                     group_list_for_a_timetable_period.append(group_list)
+                    group_frequency_list.append(first_elem_of_a_tuple)
                     group_list = []
                     first_elem_of_a_tuple = predefined_frequency
-                group_frequency_list.append(predefined_frequency)
                 group_list.append(current_difference_list[idx_d])
             else:
                 not_matched_list.append(current_difference_list[idx_d])
-        print(f"{group_list_for_a_timetable_period}\n")
+
+    print(f"{group_list_for_a_timetable_period_container[0]}\n")
 
     group_list_for_a_timetable_period_container.append(group_list_for_a_timetable_period)
