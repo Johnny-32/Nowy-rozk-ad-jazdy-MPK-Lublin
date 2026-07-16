@@ -144,49 +144,40 @@ for idx in range(len(timetable.df_list)):
     difference_list_container.append(difference_list)
 
 
+    # Making groups based on frequency, for now adding not matched frequencies to a separate list,
+    # but in the future planning to add these items as one elem. lists (or longer),
+    # I would have to add a flag to each of these not matched lists
+
     current_difference_list = difference_list_container[idx]
-    group_list = []
     group_list_for_a_timetable_period = []
     not_matched_list = []
-    group_frequency_list = []
-    group_frequency_tuple = (0, 0)
-    idx_of_a_group = 0
 
-    for idx_d in range(len(current_difference_list)):
-        current_two_timestamps, current_difference = current_difference_list[idx_d]
-        two_timestamp_list = current_two_timestamps.split("-")
-        first_timestamp = two_timestamp_list[0]
-        next_timestamp = two_timestamp_list[1]
+    current_group = []
+    current_matched_freq = None
 
+    for current_item in current_difference_list:
+        current_two_timestamps, current_difference = current_item
         
+        matched_freq = None
+        for predefined_freq in predefined_frequency_list:
+            if abs(current_difference - predefined_freq) <= tolerance:
+                matched_freq = predefined_freq
+                break
+                
+        if matched_freq is not None:
+            if current_matched_freq is not None and matched_freq != current_matched_freq:
+                if current_group:
+                    group_list_for_a_timetable_period.append(current_group)
+                current_group = []
+                
+            current_group.append(current_item)
+            current_matched_freq = matched_freq
+        else:
+            not_matched_list.append(current_item)
 
-        # Problematyczny przypadek że grupy będą 15, 20, 15
-        # Najlepiej bedzie to zrobic tak ze najpierw wszystkie roznice powrzucam do list z predefiniowanymi czestotliwosciami
-        # Pozniej rozdzielę gdy next_timestamp w liscie bedzie sie rozil od first_timestamp w kolejnym elemencie listy
-        # Wtedy w tym miejscu podzielę te listę na dwie listy
-        # Ale jak będą bardziej skomplikowane przypadki to skad bedzie wiadomo na jakie miejsce dać nowo stworzoną listę
-        # W takim razie należy poszukać innego sposobu
-        # 
-        # Pierwsza grupa jest poprawna, ale kolejne są złe, 27 poprawnie nie jest przydzielane, ale później tworzy się za dużo grup 24
-        # Też gdzieś źle appenduję - GŁÓWNY BŁĄD
-        # Obsłużyć przypadek kiedy minuta nie jest przypisana do żadnej z grup i to nie updatuje tupla
-        
-        for predefined_frequency in predefined_frequency_list:
-            if abs(current_difference - predefined_frequency) <= tolerance:
-                first_elem_of_a_tuple, second_elem_of_a_tuple = group_frequency_tuple
-                if group_frequency_tuple == (0, 0):
-                    group_frequency_tuple = (predefined_frequency, predefined_frequency)
-                else:
-                    second_elem_of_a_tuple = predefined_frequency
-                if first_elem_of_a_tuple != second_elem_of_a_tuple:
-                    group_list_for_a_timetable_period.append(group_list)
-                    group_frequency_list.append(first_elem_of_a_tuple)
-                    group_list = []
-                    first_elem_of_a_tuple = predefined_frequency
-                group_list.append(current_difference_list[idx_d])
-            else:
-                not_matched_list.append(current_difference_list[idx_d])
-
-    print(f"{group_list_for_a_timetable_period_container[0]}\n")
+    if current_group:
+        group_list_for_a_timetable_period.append(current_group)
 
     group_list_for_a_timetable_period_container.append(group_list_for_a_timetable_period)
+
+print(f"{group_list_for_a_timetable_period_container[0]}\n")
