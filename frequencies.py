@@ -194,3 +194,15 @@ for idx in range(len(timetable.df_list)):
 
 print(f"Groups:\n{group_list_for_a_timetable_period_container[0]}\n")
 print(f"Indexes of not matched elements:\n{not_matched_index_list_container[0]}")
+
+# Now we have a list of not matched elements and they can be sorted into three categories:
+# Cat 1. Not matched elements that are surrounded by groups (ex. [..., group0, notmatched0, group1, ...])
+# Cat 2. Not matched elements that have a neighboring element which is a group (either to the left or to the right) (ex. [..., group0, notmatched0, notmatched1, ...])
+# Cat 3. Elements that are surrounded by not matched list elements (ex. [..., notmatched0, notmatched1, notmatched2, ...])
+# 
+# So my soultion to append every element to a group is:
+# 1. If we find an element in Cat 1. we append it to the group that has the element that is the closest to an unmatched element
+# ex. [[..., 30], 27, [25, ...]] we append that element to the group to the right
+# 2. If we find an element in Cat 2. we append that element to the group that neighbors this element
+# 
+# By doing this two steps we should transform elements in Cat 3. to an element in either Cat 1. or Cat 2.
