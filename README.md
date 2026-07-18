@@ -12,7 +12,8 @@ This project is centered around a single python file that has diffrent functions
 - Deleting unnecessary columns, so that the timetable is simpler and takes less space 
 
 ## To do:
-- Improve print function (remove NaN's)
+- Move frequency documentation to a separate .md file
+- Test frequency algorithm on a variety of MPK Lublin lines and stops (including these in non-holiday timetables)
 - Make an algorithm that will calculate frequencies depending on the time of day (and in the future add frequencies to the timetable), maybe put in a seperate .py file
 - Make a tier list with bus lines (seperate tier list for each time ex. weekdays and then maybe group them into categories for ex. key lines have a frequency of 15 minutes during rush hour, 30 minutes on saturdays...)
 - A webiste that will display a specific timetable picked by an user (if it proves to be easy, I'll add a timetable conversion to PDF in an easy to print format)
