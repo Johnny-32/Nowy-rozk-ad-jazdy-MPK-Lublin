@@ -1,48 +1,3 @@
-# Calculating approximate frequencies
-# The algorithm will work by:
-# 1. Reading values of two minute values at a time and then calculating the frequency by subtracting each minute with the next 
-#    and adding 60 to the result if it's a non-positive number, so that the algorithm works with subtracting minutes that are associated with different hours,
-#    results will be stored in a dictionary with key that indicates hours and minutes that the minutes were subtracted (ex. 5:09 and 5:39 -> '5:09 - 5:39': '30') (ex. 5:39 and 6:09 -> '5:39 - 6:09': '30')
-# ex. 1.1  6   mod 60 (59 - 29) = 30
-#         29
-#         59
-# 
-# ex. 1.2  5   6   27 - 29 = -2 (beacuse it's a non-positive number we add 60 the the result) -2 + 60 = 58
-#         29  27
-# 
-# 2. To have a x minute frequency label the line needs to have departures every x +- y minutes,
-#    where x is the frequency and y is the tolerance for said frequency
-#    for ex. if a line has a 24 minute fruquency label it needs to have departures every 22-26 minutes, if tolerance is 2 minutes,
-#    as a base a tolerance of 2 minutes will be used,
-#    frequency for a period of time must be one of the predefined frequencies:
-#    (15, 20, 24, 30, 40, 45, 60, >60)
-#    ??? Maybe if a frequency for a period of time sways to far from a predefined frequency it will be put into something like this:
-#    if a calculated frequency is 35 minutes with big fluctuations, maybe it can be put into 30-40 frequency
-#    
-# 3. The differences will be put into groups based on their differences, if the difference between two diiferences is <= tolerance 
-#    and it the diff of diffs. is within tolerance of a predefined frequency these differences will be put in a group
-# 
-# 4. To end a group, a difference between differences needs to be larger than the tolerance
-#    To start another group the diff between diffs. needs to fall be <= tolerance
-#    ??? If it isn't then probably we'll need to up the tolernace temporarily
-# 
-# 5. From these groups we can skip "End of group 1." relation and pick the last from difference from group x and the first from group x+1, we'll refer to them as key differences
-# 
-# 6. Using these two differences we can make out a breakpoint between two frequency groups by checking the keys from key differences 
-#    and extracting the first timestamp from the first key difference and the second timestamp from the second one, in result we we'll have a breakpoint
-# 
-# 7. At the end we can plot the data into something like this: first departure - frequency - breakpoint - frequency - breakpoint - ... - frequency - last departure
-# 
-# 
-# Data structures used for storing this data:
-# diffs -> dictionary that will store differences time between departures (ex. one elem -> '5:37-5:05': 32)
-# group_container -> list that will contain groups
-# group_container[i] -> list that will contained diffs that are grouped (so like in example it will be group 1. ...)
-# breakpoint_list -> list that will contain breakpoints
-# 
-# 
-# 
-# 
 # Example 1. (Made in July 2026 - Holiday timetable) ------------------------------------------------------------------------------------------------
 # Line: 32
 # Direction: Daszyńskiego
@@ -70,8 +25,30 @@
 # 
 # So using our common sense we can see that frequencies are:
 # 5:05 - 6:07 --- 30 minutes
-# 6:07 - 7:51 --- it makes to make it 24 minutes, but in reality it's 26 minutes
+# 6:07 - 7:51 --- it makes sense to make it 24 minutes, but in reality it's 26 minutes
 # 7:51 - 9:50 --- 24 minutes
+# 
+# 
+# Now we can group the differences, let's say that the tolerance between differences is 2 minutes
+# |32 - 30| = 2 -> group 1.
+# |30 - 30| = 0 -> group 1.
+# |27 - 24| = 3 and |27 - 30| = 3 -> not matched
+# |25 - 24| = 1 -> group 2.
+# |27 - 24| = 3 and |27 - 30| = 3 -> not matched
+# |25 - 24| = 1 -> group 2.
+# |24 - 24| = 0 -> group 2
+# |23 - 24| = 1 -> group 2
+# |24 - 24| = 0 -> group 2
+# |24 - 24| = 0 -> group 2
+# 
+# Now we have two unmathed elements that have neighboring elements that are groups,
+# so we can add them to a group, which has a neighboring element that is closest to an unmatched element.
+
+# In both cases we add unmatched elements to the group 2. and finally we get:
+# [[32, 30], [27, 25, 27, 25, 24, 23, 24, 24]]
+# 
+# HARDER TO IMPLEMENT FREQUENCY ALGORITHM, BUT IT COULD WORK BETTER WITH UNCOMMON FREQUENCIES (35, 42 minutes etc.) 
+# COULD BE USED IN THE FUTURE
 # 
 # Now we can group the differences, let's say that the tolerance between differences is 2 minutes
 # 32 - 30 = 2 -> Start of group 1.
@@ -106,9 +83,6 @@
 import timetable
 from math import isnan
 
-# for i in range(len(timetable.table_hour_list_container)):
-#     print(timetable.df_list[i])
-#     print("\n")
 
 minute_list_container = []
 difference_list_container = []
@@ -120,9 +94,8 @@ predefined_frequency_list = [15, 20, 24, 30, 40, 45, 60]
 
 for idx in range(len(timetable.df_list)):
     current_df = timetable.df_list[idx]
-    # print(current_df)
 
-    # Filling a list with minute values
+    # Filling a list with departure values in tuples: ('hour', 'minute')
 
     minute_list = []
 
@@ -132,7 +105,7 @@ for idx in range(len(timetable.df_list)):
                 minute_list.append((key, minute))
     minute_list_container.append(minute_list)
 
-    # Filling a list with differences in tuples (hour:minute-hour:minute) in minutes between departures
+    # Filling a list with differences between departures in tuples: ('hour:minute-hour:minute', 'difference')
 
     current_minute_list = minute_list_container[idx]
     difference_list = []
@@ -144,10 +117,9 @@ for idx in range(len(timetable.df_list)):
         difference_list.append((difference_key, difference_value))
     difference_list_container.append(difference_list)
 
-
-    # Making groups based on frequency, for now adding not matched frequencies to a separate list,
-    # but in the future planning to add these items as one elem. lists (or longer),
-    # I would have to add a flag to each of these not matched lists
+    # Making groups based on frequency, not_matched differences are not put in a group, they're bare elements
+    # ex. (diff. between dep. are skipped in this ex. for simplicity) 
+    # [[32, 30], 27, [25, 24]]
 
     current_difference_list = difference_list_container[idx]
     group_list_for_a_timetable_period = []
@@ -192,17 +164,73 @@ for idx in range(len(timetable.df_list)):
     not_matched_index_list_container.append(not_matched_index_list)
 
 
-print(f"Groups:\n{group_list_for_a_timetable_period_container[0]}\n")
-print(f"Indexes of not matched elements:\n{not_matched_index_list_container[0]}")
-
 # Now we have a list of not matched elements and they can be sorted into three categories:
 # Cat 1. Not matched elements that are surrounded by groups (ex. [..., group0, notmatched0, group1, ...])
 # Cat 2. Not matched elements that have a neighboring element which is a group (either to the left or to the right) (ex. [..., group0, notmatched0, notmatched1, ...])
 # Cat 3. Elements that are surrounded by not matched list elements (ex. [..., notmatched0, notmatched1, notmatched2, ...])
 # 
-# So my soultion to append every element to a group is:
+# So my soultion is to append every element to a group in following steps:
 # 1. If we find an element in Cat 1. we append it to the group that has the element that is the closest to an unmatched element
-# ex. [[..., 30], 27, [25, ...]] we append that element to the group to the right
+# ex. [[..., 30], 27, [25, ...]] we append that element to the group to the right, beacuse |27 - 30| > |27 - 25|
 # 2. If we find an element in Cat 2. we append that element to the group that neighbors this element
 # 
 # By doing this two steps we should transform elements in Cat 3. to an element in either Cat 1. or Cat 2.
+
+    current_group_list = group_list_for_a_timetable_period_container[idx]
+    current_not_matched_index_list = not_matched_index_list_container[idx]
+
+    idx_gr = 0
+    while idx_gr < len(current_group_list):
+        item = current_group_list[idx_gr]
+
+        if not isinstance(item, list):
+            left_is_group = (idx_gr > 0) and isinstance(current_group_list[idx_gr - 1], list)
+            right_is_group = (idx_gr < len(current_group_list) - 1) and isinstance(current_group_list[idx_gr + 1], list)
+
+            get_val = lambda x: x[1] if isinstance(x, tuple) else x
+
+            current_val = get_val(item)
+
+            # Finding a Cat 1. element - exactly one neighbor that is a group
+            if left_is_group ^ right_is_group:
+                if left_is_group:
+                    left_group = current_group_list[idx_gr - 1]
+                    left_group.append(item)
+                else:
+                    right_group = current_group_list[idx_gr + 1]
+                    right_group.insert(0, item)
+
+                current_group_list.pop(idx_gr)
+                continue 
+
+            # Finding a Cat 2. element - both neighbors are groups
+            elif left_is_group and right_is_group:
+                left_group = current_group_list[idx_gr - 1]
+                right_group = current_group_list[idx_gr + 1]
+
+                last_left_val = get_val(left_group[-1])
+                first_right_val = get_val(right_group[0])
+
+                dist_to_left = abs(current_val - last_left_val)
+                dist_to_right = abs(current_val - first_right_val)
+
+                if dist_to_left < dist_to_right:
+                    left_group.append(item)
+                    current_group_list.pop(idx_gr)
+                elif dist_to_left > dist_to_right:
+                    right_group.insert(0, item)
+                    current_group_list.pop(idx_gr)
+                # Join two lists and an element
+                # ex. [..., group0, elem0, group1, ...] -> group0-elem0-group1
+                else:
+                    left_group.append(item)
+                    left_group.extend(right_group)
+
+                    current_group_list.pop(idx_gr)
+                    current_group_list.pop(idx_gr)
+                continue
+
+        idx_gr += 1
+
+# for group in group_list_for_a_timetable_period_container[0]:
+#     print(f"Group:\n{group}\n")
