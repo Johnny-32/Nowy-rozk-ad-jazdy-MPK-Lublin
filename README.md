@@ -9,10 +9,12 @@ This project is centered around a single python file that has diffrent functions
 - Getting an .html file from the MPK Lublin website using [requests](https://pypi.org/project/requests/)
 - Parsing a table from an .html file using [Beautiful Soup](https://beautiful-soup-4.readthedocs.io/en/latest/)
 - Preparing the data for conversion to a [Pandas](https://pandas.pydata.org/docs/index.html) dataframe
-- Deleting unnecessary columns, so that the timetable is simpler and takes less space 
+- Deleting unnecessary columns, so that the timetable is simpler and takes less space
+- Calculating frequencies on the specific line, the stop and time of day, using my own algorithm
 
 ## To do:
-- Improve print function (remove NaN's)
+- Finish moving documentation from frequencies.py to frequencies.md
+- Test frequency algorithm on a variety of MPK Lublin lines and stops (including these in non-holiday timetables)
 - Make an algorithm that will calculate frequencies depending on the time of day (and in the future add frequencies to the timetable), maybe put in a seperate .py file
 - Make a tier list with bus lines (seperate tier list for each time ex. weekdays and then maybe group them into categories for ex. key lines have a frequency of 15 minutes during rush hour, 30 minutes on saturdays...)
 - A webiste that will display a specific timetable picked by an user (if it proves to be easy, I'll add a timetable conversion to PDF in an easy to print format)
@@ -23,4 +25,4 @@ This project is centered around a single python file that has diffrent functions
 - Maybe - Add realtime departure board for stops and for routes 
 
 ## Usage
-As of now just download main.py file and run it however you like (CLI, Text editor, IDE).
+Will be updated in the future.
