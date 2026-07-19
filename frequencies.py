@@ -7,6 +7,7 @@ difference_list_container = []
 difference_list_container = []
 group_list_for_a_timetable_period_container = []
 not_matched_index_list_container = []
+matched_frequency_list_container = []
 tolerance = 2
 predefined_frequency_list = [15, 20, 24, 30, 40, 45, 60]
 
@@ -42,6 +43,7 @@ for idx in range(len(timetable.df_list)):
     current_difference_list = difference_list_container[idx]
     group_list_for_a_timetable_period = []
     not_matched_index_list = []
+    matched_frequency_list = []
 
     current_group = []
     current_matched_freq = None
@@ -59,6 +61,7 @@ for idx in range(len(timetable.df_list)):
             if current_matched_freq is not None and matched_freq != current_matched_freq:
                 if current_group:
                     group_list_for_a_timetable_period.append(current_group)
+                    matched_frequency_list.append(current_matched_freq)
                 current_group = []
                 
             current_group.append(current_item)
@@ -66,6 +69,7 @@ for idx in range(len(timetable.df_list)):
         else:
             if current_group:
                 group_list_for_a_timetable_period.append(current_group)
+                matched_frequency_list.append(current_matched_freq)
                 current_group = []
             
             group_list_for_a_timetable_period.append(current_item)
@@ -77,14 +81,17 @@ for idx in range(len(timetable.df_list)):
 
     if current_group:
         group_list_for_a_timetable_period.append(current_group)
+        matched_frequency_list.append(current_matched_freq)
+        
 
     group_list_for_a_timetable_period_container.append(group_list_for_a_timetable_period)
     not_matched_index_list_container.append(not_matched_index_list)
+    matched_frequency_list_container.append(matched_frequency_list)
+
 
     # Joining not matched elements into groups
 
     current_group_list = group_list_for_a_timetable_period_container[idx]
-    current_not_matched_index_list = not_matched_index_list_container[idx]
 
     idx_gr = 0
     while idx_gr < len(current_group_list):
@@ -98,7 +105,8 @@ for idx in range(len(timetable.df_list)):
 
             current_val = get_val(item)
 
-            # Finding an unmatched element with exactly one neighbor that is a group
+            # Finding a not matched element with exactly one neighbor that is a group
+            # Then moving that not matched elemnent into a neighboring group
             if left_is_group ^ right_is_group:
                 if left_is_group:
                     left_group = current_group_list[idx_gr - 1]
@@ -110,7 +118,8 @@ for idx in range(len(timetable.df_list)):
                 current_group_list.pop(idx_gr)
                 continue 
 
-            # Finding an unmatched element, that has both neighbors, which are groups
+            # Finding a not matched element, that has both neighbors, which are groups
+            # Then moving that element to a group, which has a neighboring element, that is closer to a not matched element
             elif left_is_group and right_is_group:
                 left_group = current_group_list[idx_gr - 1]
                 right_group = current_group_list[idx_gr + 1]
@@ -118,27 +127,74 @@ for idx in range(len(timetable.df_list)):
                 last_left_val = get_val(left_group[-1])
                 first_right_val = get_val(right_group[0])
 
-                dist_to_left = abs(current_val - last_left_val)
-                dist_to_right = abs(current_val - first_right_val)
+                diff_to_left = abs(current_val - last_left_val)
+                diff_to_right = abs(current_val - first_right_val)
 
-                if dist_to_left < dist_to_right:
+                if diff_to_left < diff_to_right:
                     left_group.append(item)
                     current_group_list.pop(idx_gr)
-                elif dist_to_left > dist_to_right:
+                elif diff_to_left > diff_to_right:
                     right_group.insert(0, item)
                     current_group_list.pop(idx_gr)
                 # Joining two lists and an element, 
                 # if the nearest elements from the neighboring groups have the same difference
                 # ex. [..., group0, elem0, group1, ...] -> group0-elem0-group1
                 else:
-                    left_group.append(item)
-                    left_group.extend(right_group)
+                    if last_left_val == first_right_val:
+                        left_group.append(item)
+                        left_group.extend(right_group)
 
-                    current_group_list.pop(idx_gr)
-                    current_group_list.pop(idx_gr)
+                        current_group_list.pop(idx_gr)
+                        current_group_list.pop(idx_gr)
+
+                        matched_frequency_list.pop(idx_gr)
+                    # In the future change this logic so it picks further from the unmatched element
+                    # ex. [(32), 30], 27 ,[24, (23)], change this so it picks numbers in (), if they exist
+                    else:
+                        dist_to_left_elem = 1
+                        dist_to_right_elem = 1
+                        left_elem_value = get_val(left_group[-dist_to_left_elem])
+                        right_elem_value = get_val(right_group[dist_to_left_elem - 1])
+                        
+                        while diff_to_left == diff_to_right:
+                            dist_to_left_elem += 1
+                            dist_to_right_elem += 1
+
+                            left_elem_exists = True if len(left_group) >= dist_to_left_elem else False
+                            right_elem_exists = True if len(right_group) > dist_to_right_elem else False
+                            if left_elem_exists:
+                                left_elem_value = get_val(current_group_list[-dist_to_left_elem])
+                            else:
+                                dist_to_left_elem -= 1
+                            if right_elem_exists:
+                                right_elem_value = get_val(current_group_list[dist_to_left_elem - 1])
+                            else:
+                                dist_to_right_elem -= 1
+
+                            if dist_to_left_elem != 1 and dist_to_right_elem != 1:
+                                diff_to_left = abs(current_val - left_elem_value)
+                                diff_to_right = abs(current_val - right_elem_value)
+                                if diff_to_left < diff_to_right:
+                                    left_group.append(item)
+                                    current_group_list.pop(idx_gr)
+                                    break
+                                elif diff_to_left > diff_to_right:
+                                    right_group.insert(0, item)
+                                    current_group_list.pop(idx_gr)
+                                    break
+                            # Very unlikely that this will ever execute
+                            # If we reach the end elements and differences are still the same
+                            # We move the non matched element to the group to the left
+                            else:
+                                left_group.append(item)
+                                current_group_list.pop(idx_gr)
+                                break
+
                 continue
 
         idx_gr += 1
 
-# for group in group_list_for_a_timetable_period_container[0]:
-#     print(f"Group:\n{group}\n")
+    matched_frequency_list_container.append(matched_frequency_list)
+
+for i in range(len(group_list_for_a_timetable_period_container[0])):
+    print(f"Group with frequency - {matched_frequency_list_container[0][i]}:\n{group_list_for_a_timetable_period_container[0][i]}\n")
