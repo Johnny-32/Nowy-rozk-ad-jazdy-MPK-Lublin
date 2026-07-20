@@ -1,4 +1,4 @@
-import timetable
+from timetable import df_list, span_list
 from math import isnan
 
 
@@ -12,8 +12,8 @@ breakpoint_list_container = []
 tolerance = 2
 predefined_frequency_list = [15, 20, 24, 30, 40, 45, 60]
 
-for idx in range(len(timetable.df_list)):
-    current_df = timetable.df_list[idx]
+for idx in range(len(df_list)):
+    current_df = df_list[idx]
 
     # Filling a list with departure values in tuples: ('hour', 'minute')
 
@@ -220,7 +220,7 @@ for idx in range(len(timetable.df_list)):
 
     breakpoint_list_container.append(breakpoint_list)
 
-    print(f"Timetable nr {idx}")
+    print(span_list[idx])
     for idx_fr in range(len(breakpoint_list) + len(matched_frequency_list)):
         if idx_fr % 2 == 0:
             print(breakpoint_list[idx_fr // 2])
@@ -228,18 +228,3 @@ for idx in range(len(timetable.df_list)):
             print(matched_frequency_list[idx_fr // 2])
     print("\n")
             
-
-    # print(breakpoint_list)
-    # break
-        
-    # print("\n\n")
-
-        
-        # for current_item in current_group:
-        #     current_two_timestamps, current_difference = current_item
-            # print(current_two_timestamps)
-            # print()
-
-
-# for i in range(len(group_list_for_a_timetable_period_container[0])):
-#     print(f"Group with frequency - {matched_frequency_list_container[0][i]}:\n{group_list_for_a_timetable_period_container[0][i]}\n")

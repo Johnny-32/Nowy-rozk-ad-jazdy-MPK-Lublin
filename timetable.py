@@ -27,8 +27,8 @@ soup = BeautifulSoup(html_content, "html.parser")
 
 # Table titles
 
-span_list_temp = soup.find_all('span', class_="rozklad-title")
-span_list = [span.get_text() for span in span_list_temp]
+span_list = soup.find_all('span', class_="rozklad-title")
+span_list = [span.get_text() for span in span_list]
 
 # Parsing table header row
 
